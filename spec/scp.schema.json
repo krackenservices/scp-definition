@@ -1,0 +1,440 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scp.dev/schema/v0.1.0/scp.schema.json",
+  "title": "System Capability Protocol",
+  "description": "Machine-first system architecture description protocol for distributed systems",
+  "type": "object",
+  "required": ["scp", "system"],
+  "properties": {
+    "scp": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "SCP specification version (semver)"
+    },
+    "system": {
+      "$ref": "#/$defs/system"
+    },
+    "ownership": {
+      "$ref": "#/$defs/ownership"
+    },
+    "provides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capability"
+      },
+      "description": "Capabilities this system provides to others"
+    },
+    "depends": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dependency"
+      },
+      "description": "Systems and capabilities this system depends on"
+    },
+    "constraints": {
+      "$ref": "#/$defs/constraints"
+    },
+    "runtime": {
+      "$ref": "#/$defs/runtime"
+    },
+    "failure_modes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/failureMode"
+      },
+      "description": "Known failure modes and their characteristics"
+    }
+  },
+  "$defs": {
+    "system": {
+      "type": "object",
+      "required": ["urn", "name"],
+      "properties": {
+        "urn": {
+          "type": "string",
+          "pattern": "^urn:scp:[a-z0-9-]+:[a-z0-9-]+$",
+          "description": "Stable, immutable system identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable system name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of system purpose"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+",
+          "description": "System version (semver)"
+        },
+        "classification": {
+          "type": "object",
+          "properties": {
+            "tier": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5,
+              "description": "Criticality tier (1=critical, 5=experimental)"
+            },
+            "domain": {
+              "type": "string",
+              "description": "Business domain"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Classification tags"
+            }
+          }
+        }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "required": ["team"],
+      "properties": {
+        "team": {
+          "type": "string",
+          "description": "Primary owning team identifier"
+        },
+        "contacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "ref"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["oncall", "slack", "email", "teams", "pagerduty", "opsgenie"],
+                "description": "Contact channel type"
+              },
+              "ref": {
+                "type": "string",
+                "description": "Contact reference URI"
+              }
+            }
+          }
+        },
+        "escalation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Escalation chain (team identifiers in order)"
+        }
+      }
+    },
+    "capability": {
+      "type": "object",
+      "required": ["capability", "type"],
+      "properties": {
+        "capability": {
+          "type": "string",
+          "description": "Capability identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["rest", "grpc", "graphql", "event", "data", "stream"],
+          "description": "Capability type"
+        },
+        "contract": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["openapi", "asyncapi", "protobuf", "graphql", "avro", "jsonschema"],
+              "description": "Contract specification type"
+            },
+            "ref": {
+              "type": "string",
+              "description": "Path or URL to contract definition"
+            }
+          }
+        },
+        "sla": {
+          "type": "object",
+          "properties": {
+            "availability": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.?[0-9]*%$",
+              "description": "Availability target (e.g., 99.95%)"
+            },
+            "latency_p50_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "P50 latency target in milliseconds"
+            },
+            "latency_p99_ms": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "P99 latency target in milliseconds"
+            },
+            "throughput_rps": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Throughput target in requests per second"
+            }
+          }
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Event topics (for event type capabilities)"
+        }
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "required": ["system", "type", "criticality"],
+      "properties": {
+        "system": {
+          "type": "string",
+          "pattern": "^urn:scp:[a-z0-9-]+:[a-z0-9-]+$",
+          "description": "URN of the system being depended upon"
+        },
+        "capability": {
+          "type": "string",
+          "description": "Specific capability being consumed"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["rest", "grpc", "graphql", "event", "data", "stream"],
+          "description": "Dependency type"
+        },
+        "criticality": {
+          "type": "string",
+          "enum": ["required", "degraded", "optional"],
+          "description": "How critical this dependency is"
+        },
+        "failure_mode": {
+          "type": "string",
+          "enum": ["fail-fast", "circuit-break", "fallback", "queue-buffer", "retry"],
+          "description": "Behavior when dependency fails"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Timeout for calls in milliseconds"
+        },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "max_attempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "backoff": {
+              "type": "string",
+              "enum": ["none", "linear", "exponential"]
+            }
+          }
+        },
+        "circuit_breaker": {
+          "type": "object",
+          "properties": {
+            "failure_threshold": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "reset_timeout_ms": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "topics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Event topics being consumed"
+        },
+        "access": {
+          "type": "string",
+          "enum": ["read", "write", "read-write"],
+          "description": "Access level for data dependencies"
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "security": {
+          "type": "object",
+          "properties": {
+            "authentication": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Required authentication methods"
+            },
+            "data_classification": {
+              "type": "string",
+              "description": "Data classification level"
+            },
+            "encryption": {
+              "type": "object",
+              "properties": {
+                "at_rest": {
+                  "type": "boolean"
+                },
+                "in_transit": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "compliance": {
+          "type": "object",
+          "properties": {
+            "frameworks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Compliance frameworks (e.g., pci-dss, soc2, hipaa)"
+            },
+            "data_residency": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Allowed data residency regions"
+            },
+            "retention_days": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Data retention period in days"
+            }
+          }
+        },
+        "operational": {
+          "type": "object",
+          "properties": {
+            "max_replicas": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "min_replicas": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "deployment_windows": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Allowed deployment windows"
+            }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "environments": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/environment"
+          }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "otel_service_name": {
+          "type": "string",
+          "description": "OpenTelemetry service.name for trace correlation"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "Service endpoints"
+        },
+        "kubernetes": {
+          "type": "object",
+          "properties": {
+            "namespace": {
+              "type": "string"
+            },
+            "deployment": {
+              "type": "string"
+            },
+            "service": {
+              "type": "string"
+            }
+          }
+        },
+        "aws": {
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "arn": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "failureMode": {
+      "type": "object",
+      "required": ["mode", "impact"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "description": "Failure mode identifier"
+        },
+        "impact": {
+          "type": "string",
+          "enum": ["total-outage", "partial-outage", "degraded-experience", "data-inconsistency", "silent-failure"],
+          "description": "Impact severity"
+        },
+        "detection": {
+          "type": "string",
+          "description": "How this failure is detected"
+        },
+        "recovery": {
+          "type": "string",
+          "description": "Recovery mechanism"
+        },
+        "degraded_behavior": {
+          "type": "string",
+          "description": "System behavior during this failure"
+        },
+        "mttr_target_minutes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Mean time to recovery target"
+        },
+        "thresholds": {
+          "type": "object",
+          "properties": {
+            "warning_ms": {
+              "type": "integer"
+            },
+            "critical_ms": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    }
+  }
+}
