@@ -1,0 +1,122 @@
+scp: "0.1.0"
+
+system:
+  urn: "urn:scp:user-service"
+  name: "User Service"
+  description: "Central user identity and profile management service"
+  version: "3.2.1"
+  classification:
+    tier: 2
+    domain: "identity"
+    tags:
+      - "user-data"
+      - "authentication"
+
+ownership:
+  team: "identity-platform"
+  contacts:
+    - type: "slack"
+      ref: "#team-identity"
+    - type: "pagerduty"
+      ref: "identity-oncall"
+
+provides:
+  - capability: "user-lookup"
+    type: "rest"
+    contract:
+      type: "openapi"
+      ref: "./api/users-v3.yaml"
+    sla:
+      availability: "99.9%"
+      latency_p99_ms: 150
+      throughput_rps: 5000
+  
+  - capability: "user-profile"
+    type: "rest"
+    contract:
+      type: "openapi"
+      ref: "./api/profiles-v2.yaml"
+    sla:
+      availability: "99.5%"
+      latency_p99_ms: 200
+
+depends:
+  - system: "urn:scp:auth-service"
+    capability: "token-validation"
+    type: "rest"
+    criticality: "required"
+    failure_mode: "circuit-break"
+    timeout_ms: 100
+    circuit_breaker:
+      failure_threshold: 5
+      reset_timeout_ms: 30000
+  
+  - system: "urn:scp:postgres-users"
+    type: "data"
+    criticality: "required"
+    failure_mode: "fail-fast"
+    access: "read-write"
+  
+  - system: "urn:scp:redis-cache"
+    type: "data"
+    criticality: "degraded"
+    failure_mode: "fallback"
+    access: "read-write"
+
+constraints:
+  security:
+    authentication: ["oauth2", "api-key"]
+    data_classification: "PII"
+    encryption:
+      at_rest: true
+      in_transit: true
+  
+  compliance:
+    frameworks: ["SOC2", "GDPR"]
+    data_residency: ["US", "EU"]
+    retention_days: 2555  # 7 years
+  
+  operational:
+    min_replicas: 3
+    max_replicas: 20
+    deployment_windows: ["tue-thu:02:00-06:00"]
+
+runtime:
+  environments:
+    production:
+      otel_service_name: "user-service"
+      endpoints:
+        - "https://api.acme.com/users"
+      kubernetes:
+        namespace: "production"
+        deployment: "user-service"
+        service: "user-service-svc"
+      aws:
+        account_id: "123456789012"
+        region: "us-east-1"
+    
+    staging:
+      otel_service_name: "user-service-staging"
+      endpoints:
+        - "https://staging-api.acme.com/users"
+      kubernetes:
+        namespace: "staging"
+        deployment: "user-service"
+
+failure_modes:
+  - mode: "database-connection-pool-exhausted"
+    impact: "partial-outage"
+    detection: "Connection pool metrics > 90%"
+    recovery: "Auto-scale replicas, alert on-call"
+    degraded_behavior: "Return cached user data, queue writes"
+    mttr_target_minutes: 5
+    thresholds:
+      warning_ms: 500
+      critical_ms: 1000
+  
+  - mode: "cache-miss-storm"
+    impact: "degraded-experience"
+    detection: "Cache hit rate < 60%"
+    recovery: "Warm cache from database, rate limit"
+    degraded_behavior: "Increased latency, database load"
+    mttr_target_minutes: 10

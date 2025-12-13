@@ -4,7 +4,10 @@
   "title": "System Capability Protocol",
   "description": "Machine-first system architecture description protocol for distributed systems",
   "type": "object",
-  "required": ["scp", "system"],
+  "required": [
+    "scp",
+    "system"
+  ],
   "properties": {
     "scp": {
       "type": "string",
@@ -48,11 +51,14 @@
   "$defs": {
     "system": {
       "type": "object",
-      "required": ["urn", "name"],
+      "required": [
+        "urn",
+        "name"
+      ],
       "properties": {
         "urn": {
           "type": "string",
-          "pattern": "^urn:scp:[a-z0-9-]+:[a-z0-9-]+$",
+          "pattern": "^urn:scp:[a-z0-9-]+(:[a-z0-9-]+)?$",
           "description": "Stable, immutable system identifier"
         },
         "name": {
@@ -94,7 +100,9 @@
     },
     "ownership": {
       "type": "object",
-      "required": ["team"],
+      "required": [
+        "team"
+      ],
       "properties": {
         "team": {
           "type": "string",
@@ -104,11 +112,21 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["type", "ref"],
+            "required": [
+              "type",
+              "ref"
+            ],
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["oncall", "slack", "email", "teams", "pagerduty", "opsgenie"],
+                "enum": [
+                  "oncall",
+                  "slack",
+                  "email",
+                  "teams",
+                  "pagerduty",
+                  "opsgenie"
+                ],
                 "description": "Contact channel type"
               },
               "ref": {
@@ -129,7 +147,10 @@
     },
     "capability": {
       "type": "object",
-      "required": ["capability", "type"],
+      "required": [
+        "capability",
+        "type"
+      ],
       "properties": {
         "capability": {
           "type": "string",
@@ -137,7 +158,14 @@
         },
         "type": {
           "type": "string",
-          "enum": ["rest", "grpc", "graphql", "event", "data", "stream"],
+          "enum": [
+            "rest",
+            "grpc",
+            "graphql",
+            "event",
+            "data",
+            "stream"
+          ],
           "description": "Capability type"
         },
         "contract": {
@@ -145,7 +173,14 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["openapi", "asyncapi", "protobuf", "graphql", "avro", "jsonschema"],
+              "enum": [
+                "openapi",
+                "asyncapi",
+                "protobuf",
+                "graphql",
+                "avro",
+                "jsonschema"
+              ],
               "description": "Contract specification type"
             },
             "ref": {
@@ -190,11 +225,15 @@
     },
     "dependency": {
       "type": "object",
-      "required": ["system", "type", "criticality"],
+      "required": [
+        "system",
+        "type",
+        "criticality"
+      ],
       "properties": {
         "system": {
           "type": "string",
-          "pattern": "^urn:scp:[a-z0-9-]+:[a-z0-9-]+$",
+          "pattern": "^urn:scp:[a-z0-9-]+(:[a-z0-9-]+)?$",
           "description": "URN of the system being depended upon"
         },
         "capability": {
@@ -203,17 +242,34 @@
         },
         "type": {
           "type": "string",
-          "enum": ["rest", "grpc", "graphql", "event", "data", "stream"],
+          "enum": [
+            "rest",
+            "grpc",
+            "graphql",
+            "event",
+            "data",
+            "stream"
+          ],
           "description": "Dependency type"
         },
         "criticality": {
           "type": "string",
-          "enum": ["required", "degraded", "optional"],
+          "enum": [
+            "required",
+            "degraded",
+            "optional"
+          ],
           "description": "How critical this dependency is"
         },
         "failure_mode": {
           "type": "string",
-          "enum": ["fail-fast", "circuit-break", "fallback", "queue-buffer", "retry"],
+          "enum": [
+            "fail-fast",
+            "circuit-break",
+            "fallback",
+            "queue-buffer",
+            "retry"
+          ],
           "description": "Behavior when dependency fails"
         },
         "timeout_ms": {
@@ -230,7 +286,11 @@
             },
             "backoff": {
               "type": "string",
-              "enum": ["none", "linear", "exponential"]
+              "enum": [
+                "none",
+                "linear",
+                "exponential"
+              ]
             }
           }
         },
@@ -256,7 +316,11 @@
         },
         "access": {
           "type": "string",
-          "enum": ["read", "write", "read-write"],
+          "enum": [
+            "read",
+            "write",
+            "read-write"
+          ],
           "description": "Access level for data dependencies"
         }
       }
@@ -395,7 +459,10 @@
     },
     "failureMode": {
       "type": "object",
-      "required": ["mode", "impact"],
+      "required": [
+        "mode",
+        "impact"
+      ],
       "properties": {
         "mode": {
           "type": "string",
@@ -403,7 +470,13 @@
         },
         "impact": {
           "type": "string",
-          "enum": ["total-outage", "partial-outage", "degraded-experience", "data-inconsistency", "silent-failure"],
+          "enum": [
+            "total-outage",
+            "partial-outage",
+            "degraded-experience",
+            "data-inconsistency",
+            "silent-failure"
+          ],
           "description": "Impact severity"
         },
         "detection": {

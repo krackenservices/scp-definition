@@ -1,0 +1,68 @@
+scp: "0.1.0"
+
+system:
+  urn: "urn:scp:analytics-processor"
+  name: "Analytics Processor"
+  description: "Real-time event stream processing for analytics"
+  version: "1.5.2"
+  classification:
+    tier: 3
+    domain: "analytics"
+    tags:
+      - "data-pipeline"
+      - "real-time"
+
+ownership:
+  team: "data-platform"
+  contacts:
+    - type: "slack"
+      ref: "#team-data"
+
+provides:
+  - capability: "analytics-stream"
+    type: "stream"
+    topics:
+      - "analytics.page-views"
+      - "analytics.user-events"
+      - "analytics.conversions"
+
+depends:
+  - system: "urn:scp:kafka-events"
+    type: "stream"
+    criticality: "required"
+    failure_mode: "retry"
+    topics:
+      - "raw-events"
+  
+  - system: "urn:scp:clickhouse"
+    type: "data"
+    criticality: "required"
+    failure_mode: "queue-buffer"
+    access: "write"
+  
+  - system: "urn:scp:redis-cache"
+    type: "data"
+    criticality: "optional"
+    failure_mode: "fallback"
+    access: "read-write"
+
+constraints:
+  operational:
+    min_replicas: 2
+    max_replicas: 10
+
+runtime:
+  environments:
+    production:
+      otel_service_name: "analytics-processor"
+      kubernetes:
+        namespace: "data-pipeline"
+        deployment: "analytics-processor"
+
+failure_modes:
+  - mode: "consumer-lag-spike"
+    impact: "degraded-experience"
+    detection: "Consumer lag > 100000 messages"
+    recovery: "Scale consumers, increase batch size"
+    degraded_behavior: "Delayed analytics data availability"
+    mttr_target_minutes: 30

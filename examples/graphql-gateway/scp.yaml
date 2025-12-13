@@ -1,0 +1,85 @@
+scp: "0.1.0"
+
+system:
+  urn: "urn:scp:graphql-gateway"
+  name: "GraphQL Gateway"
+  description: "Unified GraphQL API aggregating multiple backend services"
+  version: "1.2.0"
+  classification:
+    tier: 2
+    domain: "api-gateway"
+    tags:
+      - "graphql"
+      - "federation"
+
+ownership:
+  team: "api-platform"
+  contacts:
+    - type: "slack"
+      ref: "#team-api"
+
+provides:
+  - capability: "graphql-api"
+    type: "graphql"
+    contract:
+      type: "graphql"
+      ref: "./schema/schema.graphql"
+    sla:
+      availability: "99.9%"
+      latency_p99_ms: 500
+      throughput_rps: 3000
+
+depends:
+  - system: "urn:scp:user-service"
+    capability: "user-profile"
+    type: "rest"
+    criticality: "required"
+    failure_mode: "circuit-break"
+    timeout_ms: 200
+  
+  - system: "urn:scp:product-service"
+    capability: "product-catalog"
+    type: "rest"
+    criticality: "required"
+    failure_mode: "circuit-break"
+    timeout_ms: 300
+  
+  - system: "urn:scp:order-service"
+    capability: "order-history"
+    type: "rest"
+    criticality: "degraded"
+    failure_mode: "fallback"
+    timeout_ms: 500
+
+constraints:
+  security:
+    authentication: ["oauth2", "api-key"]
+  
+  operational:
+    min_replicas: 4
+    max_replicas: 20
+
+runtime:
+  environments:
+    production:
+      otel_service_name: "graphql-gateway"
+      endpoints:
+        - "https://api.acme.com/graphql"
+      kubernetes:
+        namespace: "api-gateway"
+        deployment: "graphql-gateway"
+
+failure_modes:
+  - mode: "downstream-service-cascade"
+    impact: "partial-outage"
+    detection: "Multiple circuit breakers open simultaneously"
+    recovery: "Return partial data, mark failed fields as null"
+    degraded_behavior: "Incomplete GraphQL responses"
+    mttr_target_minutes: 5
+  
+  - mode: "query-complexity-overload"
+    impact: "degraded-experience"
+    detection: "Query execution time > 2s"
+    recovery: "Reject overly complex queries, return error"
+    degraded_behavior: "Some queries rejected"
+    mttr_target_minutes: 0  # Query limits enforce automatically

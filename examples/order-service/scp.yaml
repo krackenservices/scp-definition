@@ -1,0 +1,140 @@
+scp: "0.1.0"
+
+system:
+  urn: "urn:scp:order-service"
+  name: "Order Service"
+  description: "Order processing and fulfillment orchestration"
+  version: "2.8.0"
+  classification:
+    tier: 1
+    domain: "commerce"
+    tags:
+      - "critical"
+      - "revenue"
+      - "pci-compliant"
+
+ownership:
+  team: "ordering"
+  contacts:
+    - type: "pagerduty"
+      ref: "ordering-critical"
+    - type: "slack"
+      ref: "#team-ordering"
+  escalation:
+    - "vp-engineering"
+    - "cto"
+
+provides:
+  - capability: "order-placement"
+    type: "rest"
+    contract:
+      type: "openapi"
+      ref: "./api/orders.yaml"
+    sla:
+      availability: "99.99%"
+      latency_p99_ms: 300
+      throughput_rps: 2000
+  
+  - capability: "order-events"
+    type: "event"
+    contract:
+      type: "asyncapi"
+      ref: "./events/order-events.yaml"
+    topics:
+      - "order.created"
+      - "order.updated"
+      - "order.fulfilled"
+      - "order.cancelled"
+
+depends:
+  - system: "urn:scp:payment-service"
+    capability: "payment-processing"
+    type: "rest"
+    criticality: "required"
+    failure_mode: "queue-buffer"
+    timeout_ms: 5000
+    retry:
+      max_attempts: 3
+      backoff: "exponential"
+  
+  - system: "urn:scp:inventory-service"
+    capability: "stock-check"
+    type: "rest"
+    criticality: "required"
+    failure_mode: "circuit-break"
+    timeout_ms: 200
+    circuit_breaker:
+      failure_threshold: 10
+      reset_timeout_ms: 60000
+  
+  - system: "urn:scp:kafka-orders"
+    type: "stream"
+    criticality: "required"
+    failure_mode: "retry"
+    topics:
+      - "order-events"
+  
+  - system: "urn:scp:user-service"
+    capability: "user-lookup"
+    type: "rest"
+    criticality: "degraded"
+    failure_mode: "fallback"
+    timeout_ms: 150
+
+constraints:
+  security:
+    authentication: ["oauth2", "service-token"]
+    data_classification: "SENSITIVE"
+    encryption:
+      at_rest: true
+      in_transit: true
+  
+  compliance:
+    frameworks: ["PCI-DSS", "SOC2"]
+    data_residency: ["US"]
+    retention_days: 2555
+  
+  operational:
+    min_replicas: 5
+    max_replicas: 50
+    deployment_windows: []  # No deployment windows - critical service
+
+runtime:
+  environments:
+    production:
+      otel_service_name: "order-service"
+      endpoints:
+        - "https://api.acme.com/orders"
+      kubernetes:
+        namespace: "production"
+        deployment: "order-service"
+        service: "order-service-svc"
+      aws:
+        account_id: "123456789012"
+        region: "us-east-1"
+        arn: "arn:aws:ecs:us-east-1:123456789012:service/prod/order-service"
+
+failure_modes:
+  - mode: "payment-gateway-timeout"
+    impact: "total-outage"
+    detection: "Payment API p99 > 5s for 2min"
+    recovery: "Circuit breaker opens, queue orders for retry"
+    degraded_behavior: "Orders queued, customer notified of delay"
+    mttr_target_minutes: 3
+    thresholds:
+      warning_ms: 3000
+      critical_ms: 5000
+  
+  - mode: "inventory-service-down"
+    impact: "partial-outage"
+    detection: "Inventory API error rate > 50%"
+    recovery: "Allow orders with pessimistic stock reservation"
+    degraded_behavior: "Risk of overselling, reconcile later"
+    mttr_target_minutes: 5
+  
+  - mode: "kafka-producer-lag"
+    impact: "data-inconsistency"
+    detection: "Producer lag > 10000 messages"
+    recovery: "Scale Kafka brokers, increase producer threads"
+    degraded_behavior: "Delayed order status updates to downstream"
+    mttr_target_minutes: 15

@@ -31,7 +31,7 @@ CREATE INDEX otel_idx IF NOT EXISTS FOR (s:System) ON (s.otel_service_name);
 
 // Example: Create system
 CREATE (s:System {
-  urn: 'urn:scp:acme:payment-service',
+  urn: 'urn:scp:payment-service:api',
   name: 'Payment Service',
   tier: 1,
   domain: 'payments',
@@ -40,8 +40,8 @@ CREATE (s:System {
 });
 
 // Example: Create dependency
-MATCH (from:System {urn: 'urn:scp:acme:payment-service'})
-MATCH (to:System {urn: 'urn:scp:acme:user-service'})
+MATCH (from:System {urn: 'urn:scp:payment-service:api'})
+MATCH (to:System {urn: 'urn:scp:user-service:api'})
 CREATE (from)-[:DEPENDS_ON {
   capability: 'user-lookup',
   type: 'rest',

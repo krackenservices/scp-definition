@@ -1,0 +1,121 @@
+scp: "0.1.0"
+
+system:
+  urn: "urn:scp:payment-service"
+  name: "Payment Service"
+  description: "Payment processing and transaction management"
+  version: "4.1.0"
+  classification:
+    tier: 1
+    domain: "payments"
+    tags:
+      - "critical"
+      - "pci-compliant"
+      - "revenue"
+
+ownership:
+  team: "payments-platform"
+  contacts:
+    - type: "pagerduty"
+      ref: "payments-critical-24x7"
+    - type: "slack"
+      ref: "#team-payments"
+  escalation:
+    - "director-payments"
+    - "vp-engineering"
+
+provides:
+  - capability: "payment-processing"
+    type: "rest"
+    contract:
+      type: "openapi"
+      ref: "./api/payments-v4.yaml"
+    sla:
+      availability: "99.95%"
+      latency_p99_ms: 200
+      throughput_rps: 1000
+  
+  - capability: "payment-events"
+    type: "event"
+    topics:
+      - "payment.initiated"
+      - "payment.completed"
+      - "payment.failed"
+
+depends:
+  - system: "urn:scp:stripe-gateway"
+    capability: "charge-processing"
+    type: "rest"
+    criticality: "required"
+    failure_mode: "circuit-break"
+    timeout_ms: 10000
+    circuit_breaker:
+      failure_threshold: 5
+      reset_timeout_ms: 60000
+  
+  - system: "urn:scp:fraud-detection"
+    capability: "fraud-check"
+    type: "rest"
+    criticality: "degraded"
+    failure_mode: "fallback"
+    timeout_ms: 1000
+  
+  - system: "urn:scp:postgres-transactions"
+    type: "data"
+    criticality: "required"
+    failure_mode: "fail-fast"
+    access: "read-write"
+
+constraints:
+  security:
+    authentication: ["mutual-tls", "service-token"]
+    data_classification: "PCI"
+    encryption:
+      at_rest: true
+      in_transit: true
+  
+  compliance:
+    frameworks: ["PCI-DSS", "SOC2", "GDPR"]
+    data_residency: ["US", "EU"]
+    retention_days: 2555
+  
+  operational:
+    min_replicas: 5
+    max_replicas: 30
+    deployment_windows: []
+
+runtime:
+  environments:
+    production:
+      otel_service_name: "payment-service"
+      endpoints:
+        - "https://api.acme.com/payments"
+      kubernetes:
+        namespace: "production"
+        deployment: "payment-service"
+        service: "payment-service-svc"
+
+failure_modes:
+  - mode: "payment-gateway-timeout"
+    impact: "total-outage"
+    detection: "Gateway p99 > 10s"
+    recovery: "Circuit breaker, failover to backup gateway"
+    degraded_behavior: "Payments queued for retry"
+    mttr_target_minutes: 2
+    thresholds:
+      warning_ms: 5000
+      critical_ms: 10000
+  
+  - mode: "database-write-failure"
+    impact: "data-inconsistency"
+    detection: "Transaction commit failures > 1%"
+    recovery: "Database failover, reconcile from gateway webhooks"
+    degraded_behavior: "Payment completed but not recorded locally"
+    mttr_target_minutes: 5
+  
+  - mode: "fraud-detection-unavailable"
+    impact: "degraded-experience"
+    detection: "Fraud service error rate > 50%"
+    recovery: "Use rule-based fallback, alert fraud team"
+    degraded_behavior: "Stricter default fraud rules applied"
+    mttr_target_minutes: 10

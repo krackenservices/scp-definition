@@ -4,7 +4,7 @@ A machine-first system architecture description protocol enabling LLMs, observab
 
 ## What is SCP?
 
-SCP provides a declarative manifest format (`scp.yaml`) that describes what a system *should* be, complementing OpenTelemetry's view of what *is happening*.
+SCP provides a declarative manifest format (`scp.yaml`) that describes what a system *should* be.
 
 ```yaml
 # scp.yaml
@@ -46,7 +46,6 @@ runtime:
 - **Theory vs Reality**: Diff declared dependencies against OTel traces
 - **Smart Alerting**: Auto-enrich alerts with ownership and blast radius
 
-
 ## Quick Start
 
 ### 1. Create `scp.yaml`
@@ -77,9 +76,6 @@ Parse all `scp.yaml` files to build an org-wide dependency graph.
 
 - [Specification](spec/scp-v0.1.md) - Complete manifest format
 - [Graph Model](spec/graph-model.md) - Neo4j schema and queries
-- [OTel Integration](integrations/otel/diff-algorithm.md) - Theory vs reality diff
-- [Alerting](integrations/alerting/enrichment.md) - Alert enrichment
-- [LLM Patterns](integrations/llm/usage-patterns.md) - AI-assisted architecture
 
 ## License
 

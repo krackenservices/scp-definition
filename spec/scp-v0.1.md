@@ -13,7 +13,7 @@ SCP provides a declarative manifest format (`scp.yaml`) that describes what a sy
 scp: "0.1.0"
 
 system:
-  urn: "urn:scp:acme:my-service"
+  urn: "urn:scp:my-service:api"
   name: "My Service"
   description: "Does important things"
   classification:
@@ -34,7 +34,7 @@ provides:
       ref: "./api/openapi.yaml"
 
 depends:
-  - system: "urn:scp:acme:database"
+  - system: "urn:scp:database:primary"
     type: "data"
     criticality: "required"
     failure_mode: "fail-fast"
@@ -52,7 +52,7 @@ runtime:
 Every system has a stable URN that survives renames and repository moves:
 
 ```
-urn:scp:<organization>:<system-name>
+urn:scp:<service-name>:<component-name>
 ```
 
 | Field | Required | Description |
@@ -102,7 +102,7 @@ Dependencies define what your system consumes:
 
 ```yaml
 depends:
-  - system: "urn:scp:org:other-service"
+  - system: "urn:scp:other-service:api"
     capability: "capability-name"    # Optional
     type: "rest|grpc|event|data"
     criticality: "required|degraded|optional"
@@ -180,10 +180,11 @@ failure_modes:
 
 | Pattern | Usage |
 |---------|-------|
-| `urn:scp:<org>:<service>` | Internal services |
+| `urn:scp:<service>` | Shorthand for simple single-component services |
+| `urn:scp:<service>:<component>` | Internal services |
 | `urn:scp:external:<provider>` | External services (Stripe, AWS, etc.) |
-| `urn:scp:<org>:<service>-db` | Databases |
-| `urn:scp:<org>:<service>-cache` | Caches |
+| `urn:scp:<service>:database` | Databases |
+| `urn:scp:<service>:cache` | Caches |
 
 ## Validation
 

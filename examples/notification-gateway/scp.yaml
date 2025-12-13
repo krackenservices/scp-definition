@@ -1,0 +1,83 @@
+scp: "0.1.0"
+
+system:
+  urn: "urn:scp:notification-gateway"
+  name: "Notification Gateway"
+  description: "Multi-channel notification delivery (email, SMS, push)"
+  version: "2.3.0"
+  classification:
+    tier: 2
+    domain: "communications"
+    tags:
+      - "async"
+      - "multi-channel"
+
+ownership:
+  team: "platform-services"
+  contacts:
+    - type: "slack"
+      ref: "#team-platform"
+
+provides:
+  - capability: "notification-delivery"
+    type: "event"
+    topics:
+      - "notification.sent"
+      - "notification.delivered"
+      - "notification.failed"
+    sla:
+      availability: "99.5%"
+      throughput_rps: 10000
+
+depends:
+  - system: "urn:scp:sendgrid"
+    capability: "email-delivery"
+    type: "rest"
+    criticality: "degraded"
+    failure_mode: "queue-buffer"
+    timeout_ms: 5000
+    retry:
+      max_attempts: 3
+      backoff: "exponential"
+  
+  - system: "urn:scp:twilio"
+    capability: "sms-delivery"
+    type: "rest"
+    criticality: "degraded"
+    failure_mode: "queue-buffer"
+    timeout_ms: 3000
+  
+  - system: "urn:scp:kafka-notifications"
+    type: "stream"
+    criticality: "required"
+    failure_mode: "retry"
+    topics:
+      - "notification-requests"
+
+constraints:
+  operational:
+    min_replicas: 3
+    max_replicas: 15
+
+runtime:
+  environments:
+    production:
+      otel_service_name: "notification-gateway"
+      kubernetes:
+        namespace: "platform"
+        deployment: "notification-gateway"
+
+failure_modes:
+  - mode: "email-provider-rate-limit"
+    impact: "degraded-experience"
+    detection: "HTTP 429 responses from SendGrid"
+    recovery: "Queue emails, throttle send rate"
+    degraded_behavior: "Delayed email delivery"
+    mttr_target_minutes: 0  # Self-healing
+  
+  - mode: "all-channels-down"
+    impact: "partial-outage"
+    detection: "All provider APIs failing"
+    recovery: "Alert operations, retry with backoff"
+    degraded_behavior: "Notifications queued indefinitely"
+    mttr_target_minutes: 15
