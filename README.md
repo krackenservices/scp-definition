@@ -46,24 +46,6 @@ runtime:
 - **Theory vs Reality**: Diff declared dependencies against OTel traces
 - **Smart Alerting**: Auto-enrich alerts with ownership and blast radius
 
-## Repository Structure
-
-```
-scp-definition/
-├── spec/
-│   ├── scp.schema.json      # JSON Schema for validation
-│   ├── scp-v0.1.md          # Specification document
-│   └── graph-model.md       # Graph model specification
-├── examples/
-│   ├── payment-service/     # Tier 1 example
-│   ├── order-service/       # Event publishing example
-│   └── user-service/        # External auth example
-├── integrations/
-│   ├── otel/                # OpenTelemetry diff
-│   ├── alerting/            # Alert enrichment
-│   └── llm/                 # LLM usage patterns
-└── README.md
-```
 
 ## Quick Start
 
