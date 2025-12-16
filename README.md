@@ -67,7 +67,8 @@ Add a manifest to your repository root. See [spec/scp-v0.1.md](spec/scp-v0.1.md)
 ### 2. Validate
 
 ```bash
-npx ajv validate -s spec/scp.schema.json -d scp.yaml
+# Requires: uv tool install check-jsonschema
+make validate
 ```
 
 ### 3. Build Graph
@@ -83,6 +84,14 @@ Parse all `scp.yaml` files to build an org-wide dependency graph.
 | **Composable** | Works alongside OpenAPI, AsyncAPI, OTel |
 | **Late-bound** | Supports partial adoption |
 | **Reality-aware** | Join points with observability data |
+
+## Related Projects
+
+| Project | Description |
+|---------|-------------|
+| [scp-integrations](https://github.com/krackenservices/scp-integrations) | CLI tooling to scan, validate, and export SCP graphs |
+| [scp-viewer](https://github.com/krackenservices/scp-viewer) | Interactive web dashboard for visualizing SCP architecture |
+| [scp-demo](https://github.com/krackenservices/scp-demo) | Example 3-tier application with SCP manifests |
 
 ## Documentation
 
