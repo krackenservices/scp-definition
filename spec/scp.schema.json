@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://scp.dev/schema/v0.1.0/scp.schema.json",
   "title": "System Capability Protocol",
-  "description": "Machine-first system architecture description protocol for distributed systems",
+  "description": "System Capability Protocol (SCP) v0.1 - A machine-readable manifest that describes what a system IS (identity, ownership), what it PROVIDES (capabilities, APIs), what it DEPENDS ON (other systems), and how it FAILS (failure modes). Place as scp.yaml in repository root. Used by LLMs for change impact analysis, observability tools for theory-vs-reality comparison, and alerting systems for ownership and blast radius.",
   "type": "object",
   "required": [
     "scp",
@@ -220,6 +220,30 @@
             "type": "string"
           },
           "description": "Event topics (for event type capabilities)"
+        },
+        "x-security": {
+          "type": "object",
+          "description": "OpenC2-inspired security metadata for SOAR autodiscovery. Use this for security tools (EDR, SIEM, SOAR) to describe actionable capabilities.",
+          "properties": {
+            "actuator_profile": {
+              "type": "string",
+              "description": "OpenC2 actuator type: edr, siem, slpf, soar"
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Supported actions: query, contain, deny, allow, remediate, notify"
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Target types: hostname, ipv4_addr, file, process, ioc"
+            }
+          }
         }
       }
     },
