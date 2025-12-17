@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://scp.dev/schema/v0.1.0/scp.schema.json",
+  "$id": "https://raw.githubusercontent.com/krackenservices/scp-definition/main/spec/scp.schema.json",
   "title": "System Capability Protocol",
   "description": "System Capability Protocol (SCP) v0.1 - A machine-readable manifest that describes what a system IS (identity, ownership), what it PROVIDES (capabilities, APIs), what it DEPENDS ON (other systems), and how it FAILS (failure modes). Place as scp.yaml in repository root. Used by LLMs for change impact analysis, observability tools for theory-vs-reality comparison, and alerting systems for ownership and blast radius.",
   "type": "object",
