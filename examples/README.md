@@ -88,6 +88,20 @@ Demonstrates:
 
 ---
 
+### [crowdstrike-edr](./crowdstrike-edr/scp.yaml)
+**Tier 1 - Endpoint Security**
+
+Demonstrates:
+- Security tool with `x-security` extensions
+- Multiple security capabilities (containment, intel, RTR)
+- OpenC2-compatible actuator profiles
+- External cloud API dependency
+- Security-specific failure modes
+
+**Key Features:** SOAR autodiscovery, security automation, threat response
+
+---
+
 ## Service Pattern Matrix
 
 | Example | Tier | Domain | Type | Key Pattern |
@@ -98,6 +112,7 @@ Demonstrates:
 | analytics-processor | 3 | analytics | Stream | Real-time data pipeline |
 | notification-gateway | 2 | communications | Events | Multi-channel async delivery |
 | graphql-gateway | 2 | api-gateway | GraphQL | Federation & aggregation |
+| crowdstrike-edr | 1 | security | REST + Events | Security tool with SOAR integration |
 
 ## Features Demonstrated
 
@@ -124,6 +139,11 @@ Demonstrates:
 - **Degraded experience**: Cache misses, slow queries
 - **Data inconsistency**: Database write failures
 - **Silent failure**: Event delivery delays
+
+### Security Extensions (x-security)
+- **Actuator profiles**: EDR, SIEM, SLPF, SOAR
+- **Actions**: query, contain, deny, allow, remediate, notify
+- **Targets**: hostname, ipv4_addr, file, process, ioc
 
 ## Usage
 

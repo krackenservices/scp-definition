@@ -96,6 +96,32 @@ provides:
       - "payments.completed"
 ```
 
+### Security Extensions (x-security)
+
+For security tools (EDR, SIEM, SOAR, etc.), the `x-security` extension describes actionable capabilities for automation:
+
+```yaml
+provides:
+  - capability: "host-containment"
+    type: "rest"
+    contract:
+      type: "openapi"
+      ref: "./api/containment.yaml"
+    x-security:
+      actuator_profile: "edr"              # OpenC2 actuator type
+      actions: ["contain", "allow", "query"]  # Supported actions
+      targets: ["hostname", "device_id"]   # Target types
+```
+
+| Field | Description |
+|-------|-------------|
+| `actuator_profile` | OpenC2-inspired profile: `edr`, `siem`, `slpf`, `soar` |
+| `actions` | Supported actions: `query`, `contain`, `deny`, `allow`, `remediate`, `notify` |
+| `targets` | Target types: `hostname`, `ipv4_addr`, `file`, `process`, `ioc`, etc. |
+
+This enables SOAR platforms to auto-discover what security tools can do. Use `scp-cli scan --export openc2` to generate an actuator inventory.
+
+
 ### Dependencies
 
 Dependencies define what your system consumes:
