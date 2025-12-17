@@ -57,6 +57,7 @@ runtime:
 - **Architecture Discovery**: Scan repos to generate org-wide system maps
 - **Theory vs Reality**: Diff declared dependencies against OTel traces
 - **Smart Alerting**: Auto-enrich alerts with ownership and blast radius
+- **Security Automation**: SOAR autodiscovery via `x-security` extensions and OpenC2 export
 
 ## Quick Start
 

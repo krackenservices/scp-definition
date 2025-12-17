@@ -1,0 +1,121 @@
+scp: "0.1.0"
+
+system:
+  urn: "urn:scp:crowdstrike-edr:falcon"
+  name: "CrowdStrike Falcon EDR"
+  description: "Endpoint Detection and Response platform for threat detection and containment"
+  version: "1.0.0"
+  classification:
+    tier: 1
+    domain: "security"
+    tags: ["edr", "endpoint", "xdr", "threat-detection"]
+
+ownership:
+  team: "security-operations"
+  contacts:
+    - type: "slack"
+      ref: "slack://channel/C123SECOPS"
+    - type: "pagerduty"
+      ref: "https://acme.pagerduty.com/escalation_policies/SECURITY"
+  escalation:
+    - "security-operations"
+    - "security-engineering"
+
+provides:
+  # Host containment - isolate compromised endpoints
+  - capability: "host-containment"
+    type: "rest"
+    contract:
+      type: "openapi"
+      ref: "./api/containment.yaml"
+    sla:
+      availability: "99.99%"
+      latency_p99_ms: 2000
+    x-security:
+      actuator_profile: "edr"
+      actions: ["contain", "allow", "query"]
+      targets: ["hostname", "device_id"]
+
+  # Threat intelligence - query IOCs and detections
+  - capability: "threat-intelligence"
+    type: "rest"
+    contract:
+      type: "openapi"
+      ref: "./api/intel.yaml"
+    sla:
+      availability: "99.95%"
+      latency_p99_ms: 500
+    x-security:
+      actuator_profile: "edr"
+      actions: ["query"]
+      targets: ["ioc", "hash", "domain", "ip_address"]
+
+  # Real-Time Response - execute remediation actions
+  - capability: "real-time-response"
+    type: "rest"
+    contract:
+      type: "openapi"
+      ref: "./api/rtr.yaml"
+    sla:
+      availability: "99.95%"
+      latency_p99_ms: 5000
+    x-security:
+      actuator_profile: "edr"
+      actions: ["remediate", "query"]
+      targets: ["process", "file", "registry"]
+
+  # Detection events - stream of security alerts
+  - capability: "detection-events"
+    type: "event"
+    contract:
+      type: "asyncapi"
+      ref: "./api/events.yaml"
+    topics:
+      - "crowdstrike.detections"
+      - "crowdstrike.incidents"
+
+depends:
+  # External CrowdStrike cloud API
+  - system: "urn:scp:external:crowdstrike-cloud"
+    type: "rest"
+    criticality: "required"
+    failure_mode: "circuit-break"
+    timeout_ms: 30000
+    circuit_breaker:
+      failure_threshold: 3
+      reset_timeout_ms: 60000
+
+constraints:
+  security:
+    authentication: ["oauth2", "api-key"]
+    data_classification: "security-telemetry"
+    encryption:
+      at_rest: true
+      in_transit: true
+  compliance:
+    frameworks: ["soc2", "fedramp"]
+  operational:
+    max_replicas: 5
+    min_replicas: 2
+
+runtime:
+  environments:
+    production:
+      otel_service_name: "crowdstrike-edr-integration"
+      endpoints:
+        - "https://api.crowdstrike.com"
+
+failure_modes:
+  - mode: "api-rate-limited"
+    impact: "degraded-experience"
+    detection: "rate-limit-response"
+    recovery: "exponential-backoff"
+    degraded_behavior: "Queue commands and retry"
+    mttr_target_minutes: 5
+
+  - mode: "cloud-api-unavailable"
+    impact: "partial-outage"
+    detection: "health-check"
+    recovery: "circuit-breaker-reset"
+    degraded_behavior: "Local cached data only, no new containment actions"
+    mttr_target_minutes: 15
