@@ -93,6 +93,7 @@ Parse all `scp.yaml` files to build an org-wide dependency graph.
 | [scp-integrations](https://github.com/krackenservices/scp-integrations) | CLI tooling to scan, validate, and export SCP graphs |
 | [scp-viewer](https://github.com/krackenservices/scp-viewer) | Interactive web dashboard for visualizing SCP architecture |
 | [scp-demo](https://github.com/krackenservices/scp-demo) | Example 3-tier application with SCP manifests |
+| [scp-sdk](https://github.com/krackenservices/scp-sdk) | SDK to assist with building integrations |
 
 ## Documentation
 
